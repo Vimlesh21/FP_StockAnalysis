@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 version: '3.9'
 
 services:
@@ -98,3 +99,105 @@ volumes:
 networks:
   tcs_network:
     driver: bridge
+=======
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: tcs_forecast_db
+    environment:
+      POSTGRES_USER: forecast_user
+      POSTGRES_PASSWORD: forecast_pass
+      POSTGRES_DB: forecast_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forecast_user -d forecast_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tcs_network
+
+  # FastAPI Backend
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: tcs_forecast_api
+    environment:
+      DATABASE_URL: postgresql://forecast_user:forecast_pass@postgres:5432/forecast_db
+      TICKER: TCS.NS
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./predictions:/app/predictions
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tcs_network
+    command: uvicorn src.api.predict_simple:app --host 0.0.0.0 --port 8000 --reload
+
+  # Streamlit Dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tcs_forecast_dashboard
+    environment:
+      DATABASE_URL: postgresql://forecast_user:forecast_pass@postgres:5432/forecast_db
+      TICKER: TCS.NS
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./predictions:/app/predictions
+      - ./reports:/app/reports
+      - ./mlops:/app/mlops
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tcs_network
+
+  # MLOps Pipeline (runs on schedule)
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tcs_forecast_pipeline
+    environment:
+      DATABASE_URL: postgresql://forecast_user:forecast_pass@postgres:5432/forecast_db
+      TICKER: TCS.NS
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./predictions:/app/predictions
+      - ./reports:/app/reports
+      - ./mlops:/app/mlops
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tcs_network
+    command: python -m mlops.pipeline --ticker TCS.NS
+    profiles:
+      - pipeline
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  tcs_network:
+    driver: bridge
+>>>>>>> a20c029 (Final MLOps project: Kafka + Airflow + FastAPI + SARIMAX + deployed model)
