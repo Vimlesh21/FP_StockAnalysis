@@ -150,6 +150,9 @@ def predict_short(features: Optional[pd.Series] = None) -> Dict[str, Any]:
         # Make prediction
         pred_return = _MODELS['short'].predict(X)[0]
         
+        # Clip to realistic range (-50% to +50% for 1-day)
+        pred_return = float(np.clip(pred_return, -0.5, 0.5))
+        
         # Estimate future close (assuming current close = 100)
         current_close = 100.0
         est_future_close = current_close * (1 + pred_return)
@@ -209,6 +212,9 @@ def predict_long(features: Optional[pd.Series] = None) -> Dict[str, Any]:
         
         # Make prediction
         pred_return = _MODELS['long'].predict(X)[0]
+        
+        # Clip to realistic range (-100% to +100% for 63-day)
+        pred_return = float(np.clip(pred_return, -1.0, 1.0))
         
         # Estimate future close
         current_close = 100.0

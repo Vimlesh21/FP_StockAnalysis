@@ -18,12 +18,15 @@ FEATURE_COLS = [
     'sma_7', 'sma_21', 'mom_7', 'vol_14', 'volume'
 ]
 
-# Create dummy training data
+# Create dummy training data with realistic constraints
 rng = np.random.default_rng(42)
-X = rng.normal(size=(200, len(FEATURE_COLS)))
-# small returns between -0.05 and 0.05
+# Features centered around reasonable ranges (returns ~0.01, sma ~100, vol ~0.1, volume ~1M)
+X = rng.normal(loc=[0.01, -0.005, 0.008, 0.002, -0.003, 100.5, 99.8, 0.015, 0.12, 1e6],
+               scale=[0.02, 0.02, 0.02, 0.02, 0.02, 5.0, 5.0, 0.05, 0.05, 0.1e6],
+               size=(200, len(FEATURE_COLS)))
+# Constrain returns to realistic small values (-5% to +5%)
 y_short = rng.uniform(-0.05, 0.05, size=(200,))
-y_long = rng.uniform(-0.2, 0.2, size=(200,))
+y_long = rng.uniform(-0.20, 0.20, size=(200,))
 
 # Train simple linear models
 short_model = LinearRegression()
