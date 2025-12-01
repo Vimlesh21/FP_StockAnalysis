@@ -1,0 +1,11 @@
+﻿# Ignore virtual envs and caches
+.venv*
+venv/
+.venv_py311/
+__pycache__/
+*.pyc
+logs/
+.streamlit/
+.pytest_cache/
+# Ignore model binaries (optional for repo)
+models/*.pkl
